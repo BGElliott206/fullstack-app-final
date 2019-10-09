@@ -1,58 +1,91 @@
 import React from 'react';
-import logo from './logo.svg';
+// import logo from './logo.svg';
 import './App.css';
 
-function App() {
+class App extends React.Component {
   constructor() {
     super();
     this.state = {
       scores: [],
+      nameInput: '',
+      scoreInput: '',
     }
   }
 
   componentDidMount() {
     fetch('http://localhost:4000/scores')
-    .then(res => res.json)
-    .then(data => this.setState({scores:data}));
+      .then(res => res.json())
+      .then(data => this.setState({ scores: data }));
   }
 
-  handleDelete = (_id)=> {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: { _id }
-  })
+  handleDelete = (e, _id) => {
+    e.preventDefault();
+    fetch('http://localhost:4000/scores', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ _id }),
+    }).then(res => res.json())
+      .then(data => this.setState({ scores: data }));
+  }
 
-  handleAdd() {
-    fetch('http://localhost:4000/scores'), {
+  handleAdd = (e) => {
+    e.preventDefault();
+    console.log(this.state);
+    fetch('http://localhost:4000/scores', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      data: JSON.stringify({ name: this.state.name, score: this.state.scoreInput})
-    }
+      body: JSON.stringify({ name: this.state.nameInput, score: this.state.scoreInput }),
+    })
+      .then(response => response.json())
+      .then(data => this.setState((prevState) => {
+        return { scores: [...prevState.scores, data].sort((a, b) => b.score - a.score) }
+      }));
   }
 
-  handleChange(e) {
-    const { name,value } = e.target;
-    this.setState({ [name]: value});
+  handleChange = (e) => {
+    const { name, value } = e.target;
+    this.setState({ [name]: value });
   }
 
-  render () {
+  render() {
+    console.log(this.state)
     return (
       <div className="App">
         <h1>High Scores</h1>
         <ul>
-          {this.state.scores.map(score => {
-            return <li key={score._id}>{score.name} - {score.score}</li>
-          })}
+          {this.state.scores.map((score, idx) => {
+            return (
+              <li
+                key={score._id}
+              >
+                {idx === 0 ? <p>High Score {score.name} - {score.score}</p> : <p>{score.name} - {score.score}</p>}
+                <button onClick={(e) => this.handleDelete(e, score._id)}>
+                  Delete
+                </button>
+              </li>
+            )
+          }
+          )}
         </ul>
-        <input
-          name="nameInput"
-          value={}
+        <form onSubmit={this.handleAdd}>
+          <input
+            name="nameInput"
+            value={this.state.nameInput}
+            onChange={this.handleChange}
+          />
+          <input
+            name="scoreInput"
+            value={this.state.scoreInput}
+            onChange={this.handleChange}
+          />
+          <button type="submit">Add</button>
+        </form>
       </div>
-    )
+    );
   }
 }
 
